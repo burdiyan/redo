@@ -1,5 +1,7 @@
 """redo-ifchange: build the given targets if they have changed."""
-import os, sys, traceback
+import os
+import sys
+import traceback
 from . import env, builder, deps, helpers, jobserver, logs, state
 from .logs import debug2, err
 

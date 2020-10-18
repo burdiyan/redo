@@ -1,5 +1,10 @@
 """Code for manipulating redo's state database."""
-import sys, os, errno, stat, fcntl, sqlite3
+import sys
+import os
+import errno
+import stat
+import fcntl
+import sqlite3
 from . import cycles, env
 from .helpers import unlink, close_on_exec
 from .logs import warn, debug2, debug3
@@ -36,6 +41,8 @@ _lockfile = None
 
 
 _db = None
+
+
 def db():
     """Initialize the state database and return its object."""
     global _db, _lockfile
@@ -72,7 +79,8 @@ def db():
             sys.stderr.write(
                 'redo: %s: found v%s (expected v%s)\n'
                 % (dbfile, ver, SCHEMA_VER))
-            sys.stderr.write('redo: manually delete .redo dir to start over.\n')
+            sys.stderr.write(
+                'redo: manually delete .redo dir to start over.\n')
             sys.exit(1)
     if must_create:
         unlink(dbfile)
@@ -122,6 +130,8 @@ def init(targets):
 
 
 _wrote = 0
+
+
 def _write(q, l):
     if _insane:
         return
@@ -153,6 +163,8 @@ def is_flushed():
 
 
 _insane = None
+
+
 def check_sane():
     global _insane
     if not _insane:
@@ -175,6 +187,8 @@ def _realdirpath(t):
 
 
 _cwd = None
+
+
 def relpath(t, base):
     """Given a relative or absolute path t, express it relative to base."""
     global _cwd
@@ -241,6 +255,8 @@ def warn_override(name):
 _file_cols = ['rowid', 'name', 'is_generated', 'is_override',
               'checked_runid', 'changed_runid', 'failed_runid',
               'stamp', 'csum']
+
+
 class File(object):
     """An object representing a source or target in the redo database."""
 
@@ -283,7 +299,7 @@ class File(object):
          self.checked_runid, self.changed_runid, self.failed_runid,
          self.stamp, self.csum) = cols
         if self.name == ALWAYS and (
-            self.changed_runid is None or self.changed_runid < env.v.RUNID):
+                self.changed_runid is None or self.changed_runid < env.v.RUNID):
             self.changed_runid = env.v.RUNID
 
     def __init__(self, fid=None, name=None, cols=None, allow_add=True):
@@ -299,7 +315,7 @@ class File(object):
         self._init_from_idname(self.id, None, allow_add=False)
 
     def save(self):
-        cols = ', '.join(['%s=?'%i for i in _file_cols[2:]])
+        cols = ', '.join(['%s=?' % i for i in _file_cols[2:]])
         _write('update Files set '
                '    %s '
                '    where rowid=?' % cols,
@@ -357,6 +373,11 @@ class File(object):
             debug2("STAMP: %s: %r -> %r\n" % (self.name, self.stamp, newstamp))
             self.stamp = newstamp
             self.set_changed()
+
+    def mark_output(self, must_exist=True):
+        self.update_stamp(must_exist=must_exist)
+        self.failed_runid = None
+        self.is_generated = True
 
     def is_source(self):
         """Returns true if this object represents a source (not a target)."""
@@ -486,6 +507,8 @@ def logname(fid):
 # ok, but it doesn't have F_GETLK, so we can't report which pid owns the lock.
 # The makes debugging a bit harder.  When we someday port to C, we can do that.
 _locks = {}
+
+
 class Lock(object):
     """An object representing a lock on a redo target file."""
 
@@ -512,7 +535,7 @@ class Lock(object):
         self.check()
         assert not self.owned
         try:
-            fcntl.lockf(_lockfile, fcntl.LOCK_EX|fcntl.LOCK_NB, 1, self.fid)
+            fcntl.lockf(_lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB, 1, self.fid)
         except IOError as e:
             if e.errno in (errno.EAGAIN, errno.EACCES):
                 pass  # someone else has it locked
